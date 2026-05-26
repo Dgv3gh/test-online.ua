@@ -107,6 +107,14 @@ body.accent-red{--accent:#dc2626;--accent-hover:#b91c1c;--accent-light:#dc262640
 body.no-anim *,body.no-anim *::before,body.no-anim *::after{animation:none!important;transition:none!important}
 
 /* FILTER BAR */
+/* ── Pause Overlay ── */
+#pauseOverlay{position:fixed;inset:0;background:rgba(15,15,30,.97);z-index:8000;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:20px;}
+#pauseOverlay .pause-icon{font-size:64px;}
+#pauseOverlay .pause-title{font-size:24px;font-weight:900;color:#fff;}
+#pauseOverlay .pause-sub{font-size:14px;color:#aaa;}
+#pauseOverlay .pause-btn{background:var(--accent,#4855C8);border:none;color:#fff;
+  font-size:16px;font-weight:700;border-radius:14px;padding:14px 40px;cursor:pointer;}
 /* ── TG Float Banner ── */
 #tgFloatBanner{position:fixed;bottom:90px;right:12px;z-index:400;background:linear-gradient(135deg,#0088cc,#33aaff);
   color:#fff;border-radius:16px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;
@@ -2142,6 +2150,15 @@ function selectAnswer(ai) {
     // If not multiChoice and feedback enabled and NOT form mode
     if (currentTest.showFeedback && !currentTest.isForm) {
       showFeedbackNow();
+      // Auto-advance after delay if enabled
+      var _ap=getSetting('autoprog','off'), _apSec=parseInt(getSetting('autoprog_sec','2'))||2;
+      if(_ap==='on'){
+        if(window._autoAdvTimer) clearTimeout(window._autoAdvTimer);
+        window._autoAdvTimer=setTimeout(function(){
+          window._autoAdvTimer=null;
+          takeNext();
+        }, _apSec*1000);
+      }
     } else if (currentTest.isForm) {
       // Form mode: mark answered, show progress, auto-advance
       feedbackShown[currentQ] = true;
@@ -3880,6 +3897,17 @@ function recordTestTaken(score, total, timeMs) {
   }
   localStorage.setItem('to_last_day_' + loggedUser, today);
   checkAndToastAchievements();
+  // Track global stats
+  if(loggedUser){
+    var _sk='stats_'+loggedUser;
+    var _st={}; try{_st=JSON.parse(localStorage.getItem(_sk)||'{}');}catch(e){}
+    _st.total=(_st.total||0)+1;
+    var pct=total>0?Math.round(score/total*100):0;
+    _st.scoreSum=(_st.scoreSum||0)+pct;
+    if(!_st.best||pct>_st.best) _st.best=pct;
+    localStorage.setItem(_sk,JSON.stringify(_st));
+  }
+
 }
 
 // ═══════════════════════════════
@@ -6449,9 +6477,9 @@ function getSetting(k,d){try{var v=localStorage.getItem('to_cfg_'+k);return v!==
 function setSetting(k,v){try{localStorage.setItem('to_cfg_'+k,v);}catch(e){}}
 var _LANGS={
 ua:{settings_title:'Налаштування',lbl_account:'АКАУНТ',lbl_memory:"ПАМ'ЯТЬ",lbl_panel:'ПАНЕЛЬ',lbl_sort:'СОРТУВАННЯ',lbl_theme:'ТЕМА',lbl_font:'ШРИФТ',lbl_accent:'КОЛІР АКЦЕНТУ',lbl_anim:'АНІМАЦІЇ',lbl_reset:'ПРОГРЕС',lbl_lang:'МОВА',lbl_about:'ПРО ДОДАТОК',pos_bottom:'⬇️ Знизу',pos_top:'⬆️ Над тестами',sort_date:'🕐 За датою',sort_name:'🔤 За назвою',sort_q:'🔢 За питаннями',theme_light:'☀️ Світла',theme_dark:'🌙 Темна',font_sm:'А- Малий',font_md:'А Звичайний',font_lg:'А+ Великий',accent_blue:'🔵 Синій',accent_green:'🟢 Зелений',accent_violet:'🟣 Фіолетовий',accent_red:'🔴 Червоний',anim_on:'✨ Увімкнено',anim_off:'⚡ Вимкнено',reset_btn:'🗑 Скинути прогрес',confirm_reset:'Скинути прогрес? Монети та досягнення будуть видалені.',reset_ok:'✅ Прогрес скинуто!',clear_cache:'🗑 Очистити кеш',btn_close:'Закрити',guest:'Гість',used_kb:'~{n} КБ',confirm_clear:'Очистити кеш? Локальні тести скинуться.',cleared:'✅ Кеш очищено!',err_clear:'Помилка',version_lbl:'Версія',platform_lbl:'Платформа для тестування знань'},
-ru:{settings_title:'Настройки',lbl_account:'АККАУНТ',lbl_memory:'ПАМЯТЬ',lbl_panel:'ПАНЕЛЬ',lbl_sort:'СОРТИРОВКА',lbl_theme:'ТЕМА',lbl_font:'ШРИФТ',lbl_accent:'ЦВЕТ АКЦЕНТА',lbl_anim:'АНИМАЦИИ',lbl_reset:'ПРОГРЕСС',lbl_lang:'ЯЗЫК',lbl_about:'О ПРИЛОЖЕНИИ',pos_bottom:'⬇️ Снизу',pos_top:'⬆️ Над тестами',sort_date:'🕐 По дате',sort_name:'🔤 По названию',sort_q:'🔢 По вопросам',theme_light:'☀️ Светлая',theme_dark:'🌙 Тёмная',font_sm:'А- Малый',font_md:'А Обычный',font_lg:'А+ Большой',accent_blue:'🔵 Синий',accent_green:'🟢 Зелёный',accent_violet:'🟣 Фиолетовый',accent_red:'🔴 Красный',anim_on:'✨ Включены',anim_off:'⚡ Выключены',reset_btn:'🗑 Сбросить прогресс',confirm_reset:'Сбросить прогресс? Монеты и достижения будут удалены.',reset_ok:'✅ Прогресс сброшен!',clear_cache:'🗑 Очистить кэш',btn_close:'Закрыть',guest:'Гость',used_kb:'~{n} КБ',confirm_clear:'Очистить кэш? Локальные тесты сбросятся.',cleared:'✅ Кэш очищен!',err_clear:'Ошибка',version_lbl:'Версия',platform_lbl:'Платформа для тестирования знаний'},
-en:{settings_title:'Settings',lbl_account:'ACCOUNT',lbl_memory:'STORAGE',lbl_panel:'PANEL',lbl_sort:'SORT',lbl_theme:'THEME',lbl_font:'FONT',lbl_accent:'ACCENT COLOR',lbl_anim:'ANIMATIONS',lbl_reset:'PROGRESS',lbl_lang:'LANGUAGE',lbl_about:'ABOUT',pos_bottom:'⬇️ Bottom',pos_top:'⬆️ Above tests',sort_date:'🕐 By date',sort_name:'🔤 By name',sort_q:'🔢 By questions',theme_light:'☀️ Light',theme_dark:'🌙 Dark',font_sm:'A- Small',font_md:'A Normal',font_lg:'A+ Large',accent_blue:'🔵 Blue',accent_green:'🟢 Green',accent_violet:'🟣 Violet',accent_red:'🔴 Red',anim_on:'✨ On',anim_off:'⚡ Off',reset_btn:'🗑 Reset progress',confirm_reset:'Reset progress? Coins and achievements will be deleted.',reset_ok:'✅ Progress reset!',clear_cache:'🗑 Clear cache',btn_close:'Close',guest:'Guest',used_kb:'~{n} KB',confirm_clear:'Clear cache? Local tests will reset.',cleared:'✅ Cleared!',err_clear:'Error',version_lbl:'Version',platform_lbl:'Knowledge testing platform'},
-pl:{settings_title:'Ustawienia',lbl_account:'KONTO',lbl_memory:'PAMIĘĆ',lbl_panel:'PANEL',lbl_sort:'SORTOWANIE',lbl_theme:'MOTYW',lbl_font:'CZCIONKA',lbl_accent:'KOLOR',lbl_anim:'ANIMACJE',lbl_reset:'POSTĘP',lbl_lang:'JĘZYK',lbl_about:'O APLIKACJI',pos_bottom:'⬇️ Na dole',pos_top:'⬆️ Nad testami',sort_date:'🕐 Wg daty',sort_name:'🔤 Wg nazwy',sort_q:'🔢 Wg pytań',theme_light:'☀️ Jasny',theme_dark:'🌙 Ciemny',font_sm:'A- Mały',font_md:'A Normalny',font_lg:'A+ Duży',accent_blue:'🔵 Niebieski',accent_green:'🟢 Zielony',accent_violet:'🟣 Fioletowy',accent_red:'🔴 Czerwony',anim_on:'✨ Włączone',anim_off:'⚡ Wyłączone',reset_btn:'🗑 Resetuj',confirm_reset:'Zresetować postęp? Monety i osiągnięcia zostaną usunięte.',reset_ok:'✅ Zresetowano!',clear_cache:'🗑 Wyczyść',btn_close:'Zamknij',guest:'Gość',used_kb:'~{n} KB',confirm_clear:'Wyczyścić? Lokalne testy zostaną usunięte.',cleared:'✅ Wyczyszczono!',err_clear:'Błąd',version_lbl:'Wersja',platform_lbl:'Platforma do testowania wiedzy'}
+ru:{settings_title:'Настройки',lbl_account:'АККАУНТ',lbl_memory:'ПАМЯТЬ',lbl_panel:'ПАНЕЛЬ',lbl_sort:'СОРТИРОВКА',lbl_theme:'ТЕМА',lbl_font:'ШРИФТ',lbl_accent:'ЦВЕТ АКЦЕНТА',lbl_anim:'АНИМАЦИИ',lbl_stats:'СТАТИСТИКА',lbl_autoprog:'АВТОПЕРЕХОД',lbl_pause:'ПАУЗА (Esc)',lbl_reset:'ПРОГРЕСС',lbl_lang:'ЯЗЫК',lbl_about:'О ПРИЛОЖЕНИИ',pos_bottom:'⬇️ Снизу',pos_top:'⬆️ Над тестами',sort_date:'🕐 По дате',sort_name:'🔤 По названию',sort_q:'🔢 По вопросам',theme_light:'☀️ Светлая',theme_dark:'🌙 Тёмная',font_sm:'А- Малый',font_md:'А Обычный',font_lg:'А+ Большой',accent_blue:'🔵 Синий',accent_green:'🟢 Зелёный',accent_violet:'🟣 Фиолетовый',accent_red:'🔴 Красный',anim_on:'✨ Включены',anim_off:'⚡ Выключены',reset_btn:'🗑 Сбросить прогресс',confirm_reset:'Сбросить прогресс? Монеты и достижения будут удалены.',reset_ok:'✅ Прогресс сброшен!',clear_cache:'🗑 Очистить кэш',btn_close:'Закрыть',guest:'Гость',used_kb:'~{n} КБ',confirm_clear:'Очистить кэш? Локальные тесты сбросятся.',cleared:'✅ Кэш очищен!',err_clear:'Ошибка',version_lbl:'Версия',platform_lbl:'Платформа для тестирования знаний'},
+en:{settings_title:'Settings',lbl_account:'ACCOUNT',lbl_memory:'STORAGE',lbl_panel:'PANEL',lbl_sort:'SORT',lbl_theme:'THEME',lbl_font:'FONT',lbl_accent:'ACCENT COLOR',lbl_anim:'ANIMATIONS',lbl_stats:'STATISTICS',lbl_autoprog:'AUTO-ADVANCE',lbl_pause:'PAUSE (Esc)',lbl_reset:'PROGRESS',lbl_lang:'LANGUAGE',lbl_about:'ABOUT',pos_bottom:'⬇️ Bottom',pos_top:'⬆️ Above tests',sort_date:'🕐 By date',sort_name:'🔤 By name',sort_q:'🔢 By questions',theme_light:'☀️ Light',theme_dark:'🌙 Dark',font_sm:'A- Small',font_md:'A Normal',font_lg:'A+ Large',accent_blue:'🔵 Blue',accent_green:'🟢 Green',accent_violet:'🟣 Violet',accent_red:'🔴 Red',anim_on:'✨ On',anim_off:'⚡ Off',reset_btn:'🗑 Reset progress',confirm_reset:'Reset progress? Coins and achievements will be deleted.',reset_ok:'✅ Progress reset!',clear_cache:'🗑 Clear cache',btn_close:'Close',guest:'Guest',used_kb:'~{n} KB',confirm_clear:'Clear cache? Local tests will reset.',cleared:'✅ Cleared!',err_clear:'Error',version_lbl:'Version',platform_lbl:'Knowledge testing platform'},
+pl:{settings_title:'Ustawienia',lbl_account:'KONTO',lbl_memory:'PAMIĘĆ',lbl_panel:'PANEL',lbl_sort:'SORTOWANIE',lbl_theme:'MOTYW',lbl_font:'CZCIONKA',lbl_accent:'KOLOR',lbl_anim:'ANIMACJE',lbl_stats:'STATYSTYKI',lbl_autoprog:'AUTO-PRZEJŚCIĘ',lbl_pause:'PAUZA (Esc)',lbl_reset:'POSTĘP',lbl_lang:'JĘZYK',lbl_about:'O APLIKACJI',pos_bottom:'⬇️ Na dole',pos_top:'⬆️ Nad testami',sort_date:'🕐 Wg daty',sort_name:'🔤 Wg nazwy',sort_q:'🔢 Wg pytań',theme_light:'☀️ Jasny',theme_dark:'🌙 Ciemny',font_sm:'A- Mały',font_md:'A Normalny',font_lg:'A+ Duży',accent_blue:'🔵 Niebieski',accent_green:'🟢 Zielony',accent_violet:'🟣 Fioletowy',accent_red:'🔴 Czerwony',anim_on:'✨ Włączone',anim_off:'⚡ Wyłączone',reset_btn:'🗑 Resetuj',confirm_reset:'Zresetować postęp? Monety i osiągnięcia zostaną usunięte.',reset_ok:'✅ Zresetowano!',clear_cache:'🗑 Wyczyść',btn_close:'Zamknij',guest:'Gość',used_kb:'~{n} KB',confirm_clear:'Wyczyścić? Lokalne testy zostaną usunięte.',cleared:'✅ Wyczyszczono!',err_clear:'Błąd',version_lbl:'Wersja',platform_lbl:'Platforma do testowania wiedzy'}
 };
 function L(k){var d=_LANGS[getSetting('lang','ua')]||_LANGS.ua;return d[k]!==undefined?d[k]:(_LANGS.ua[k]||k);}
 function applyTheme(){
@@ -6520,6 +6548,42 @@ function showSettings(){
       ? rw(bt('sAB',ac==='blue',L('accent_blue'))+bt('sAG',ac==='green',L('accent_green'))+bt('sAV',ac==='violet',L('accent_violet'))+bt('sAR',ac==='red',L('accent_red')))
       : '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;"><span style="font-size:20px;">🔒</span><span style="font-size:13px;color:#888;">Тільки для PRO</span><button onclick="closeSettings();showUpgrade()" style="margin-left:auto;background:#FFD700;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:800;cursor:pointer;">⚡ Отримати PRO</button></div>')
     +sc(L('lbl_anim'),rw(bt('sAOn',an==='on',L('anim_on'))+bt('sAOf',an==='off',L('anim_off'))))
+
+    // Statistics section
+    +sc(L('lbl_stats'), (function(){
+      var statsKey='stats_'+(loggedUser||'guest');
+      var st={}; try{st=JSON.parse(localStorage.getItem(statsKey)||'{}');}catch(e){}
+      var total=st.total||0, avg=total>0?Math.round((st.scoreSum||0)/total):'—', best=st.best||'—';
+      return '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+        +'<div style="flex:1;background:'+sb+';border-radius:9px;padding:10px;text-align:center;border:1px solid '+sbr+';">'
+        +'<div style="font-size:22px;font-weight:900;color:var(--accent,#4855C8);">'+total+'</div>'
+        +'<div style="font-size:10px;color:'+ts+';">'+L('stats_tests')+'</div></div>'
+        +'<div style="flex:1;background:'+sb+';border-radius:9px;padding:10px;text-align:center;border:1px solid '+sbr+';">'
+        +'<div style="font-size:22px;font-weight:900;color:#16a34a;">'+avg+'%</div>'
+        +'<div style="font-size:10px;color:'+ts+';">'+L('stats_avg')+'</div></div>'
+        +'<div style="flex:1;background:'+sb+';border-radius:9px;padding:10px;text-align:center;border:1px solid '+sbr+';">'
+        +'<div style="font-size:22px;font-weight:900;color:#f59e0b;">'+(best!=='—'?best+'%':best)+'</div>'
+        +'<div style="font-size:10px;color:'+ts+';">'+L('stats_best')+'</div></div>'
+        +'</div>';
+    })())
+
+    // Auto-advance section
+    +sc(L('lbl_autoprog'), (function(){
+      var apVal=getSetting('autoprog','off');
+      var apSec=parseInt(getSetting('autoprog_sec','2'));
+      var btns=rw(bt('sApOff',apVal==='off',L('autoprog_off'))+bt('sApOn',apVal==='on',L('autoprog_on')));
+      var slider = apVal==='on'
+        ? '<div style="margin-top:10px;display:flex;align-items:center;gap:10px;">'
+          +'<input type="range" id="sApRange" min="1" max="5" value="'+apSec+'" style="flex:1;accent-color:var(--accent,#4855C8);">'
+          +'<span id="sApLabel" style="font-size:13px;font-weight:700;color:'+tm+';min-width:60px;">'+apSec+' '+L('secs_after')+'</span>'
+          +'</div>'
+        : '';
+      return btns + slider;
+    })())
+
+    // Pause on Esc section
+    +sc(L('lbl_pause'),rw(bt('sPauseOn',getSetting('pause_esc','on')==='on',L('pause_on'))+bt('sPauseOff',getSetting('pause_esc','on')==='off',L('pause_off'))))
+
     +sc(L('lbl_reset'),'<button id="sBReset" style="width:100%;padding:9px;background:#fff0f0;border:1.5px solid #fca5a5;border-radius:9px;color:#dc2626;font-size:13px;font-weight:700;cursor:pointer;">'+L('reset_btn')+'</button>')
     +sc(L('lbl_lang'),rw(bt('sLU',lg==='ua','\uD83C\uDDFA\uD83C\uDDE6 UA')+bt('sLR',lg==='ru','\uD83C\uDDF7\uD83C\uDDFA RU')+bt('sLE',lg==='en','\uD83C\uDDEC\uD83C\uDDE7 EN')+bt('sLP',lg==='pl','\uD83C\uDDF5\uD83C\uDDF1 PL')))
     +sc(L('lbl_about'),'<div style="font-size:13px;color:'+tx+';line-height:1.7;">'+L('version_lbl')+': <b>v2.6</b><br>'+L('platform_lbl')+'<br>\uD83C\uDDFA\uD83C\uDDE6 Ukraine</div>')
@@ -6570,6 +6634,20 @@ function showSettings(){
   bind('sAR',function(){if(!pro){closeSettings();showUpgrade();return;}setSetting('accent','red');applyAccent();showSettings();});
   bind('sAOn',function(){setSetting('anim','on');applyAnim();showSettings();});
   bind('sAOf',function(){setSetting('anim','off');applyAnim();showSettings();});
+  bind('sApOff',function(){setSetting('autoprog','off');showSettings();});
+  bind('sApOn',function(){setSetting('autoprog','on');showSettings();});
+  bind('sPauseOn',function(){setSetting('pause_esc','on');showSettings();});
+  bind('sPauseOff',function(){setSetting('pause_esc','off');showSettings();});
+  // Auto-advance range slider live update
+  var apRange=document.getElementById('sApRange');
+  if(apRange){
+    apRange.oninput=function(){
+      document.getElementById('sApLabel').textContent=this.value+' '+L('secs_after');
+    };
+    apRange.onchange=function(){
+      setSetting('autoprog_sec',this.value);
+    };
+  }
   bind('sLU',function(){setSetting('lang','ua');if(typeof renderTestList==='function')renderTestList();showSettings();});
   bind('sLR',function(){setSetting('lang','ru');if(typeof renderTestList==='function')renderTestList();showSettings();});
   bind('sLE',function(){setSetting('lang','en');if(typeof renderTestList==='function')renderTestList();showSettings();});
@@ -7137,6 +7215,68 @@ function showTelegramBonus(){
 // -- Check PRO expiry on load --
 setTimeout(function(){if(typeof loggedUser!=='undefined'&&loggedUser)checkProExpiry();},1500);
 
+
+// ── Pause on Esc ──────────────────────────────────────────────
+var _testPaused = false;
+var _pauseTimerInterval = null;
+
+// Global Esc handler
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape') return;
+  // Check if test is currently running (taketest screen is active)
+  var takeScreen = document.getElementById('taketest');
+  var isTestActive = takeScreen && window.getComputedStyle(takeScreen).display !== 'none';
+  if (!isTestActive) return;
+  if (getSetting('pause_esc','on') === 'off') return;
+  if (_testPaused) { resumeTest(); return; }
+  pauseTest();
+}, true); // capture phase to intercept before anything else
+
+function pauseTest() {
+  _testPaused = true;
+  // Cancel auto-advance timer
+  if (window._autoAdvTimer) { clearTimeout(window._autoAdvTimer); window._autoAdvTimer = null; }
+  // Hide ALL test content (entire content area)
+  var content = document.querySelector('#taketest .content');
+  var header  = document.querySelector('#taketest .test-header');
+  if (content) content.style.visibility = 'hidden';
+  if (header)  header.style.visibility  = 'hidden';
+  // Show pause overlay (fullscreen dark)
+  var ov = document.getElementById('pauseOverlay');
+  if (ov) { ov.style.display = 'flex'; }
+  // If timer running — pause it by stopping interval
+  if (typeof timerInterval !== 'undefined' && timerInterval) {
+    clearInterval(timerInterval);
+    _pauseTimerInterval = timerInterval;
+    timerInterval = null;
+  }
+  // Exit fullscreen if active (mobile)
+  try { if(document.fullscreenElement) document.exitFullscreen(); } catch(e){}
+}
+
+function resumeTest() {
+  _testPaused = false;
+  // Restore test content
+  var content = document.querySelector('#taketest .content');
+  var header  = document.querySelector('#taketest .test-header');
+  if (content) content.style.visibility = '';
+  if (header)  header.style.visibility  = '';
+  // Hide pause overlay
+  var ov = document.getElementById('pauseOverlay');
+  if (ov) { ov.style.display = 'none'; }
+  // Restore timer if it was paused
+  if (_pauseTimerInterval !== null) {
+    timerInterval = setInterval(updateTimer, 500);
+    _pauseTimerInterval = null;
+  }
+  // Re-enter fullscreen
+  try {
+    var el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  } catch(e){}
+}
+
 // ── Supabase (cross-device accounts + Kahoot) ──
 
 </script>
@@ -7288,5 +7428,17 @@ setTimeout(function(){if(typeof loggedUser!=='undefined'&&loggedUser)checkProExp
   });
 })();
 </script>
+
+<div id="pauseOverlay">
+  <div class="pause-icon" style="animation:pulse 2s infinite;">⏸️</div>
+  <div class="pause-title">Тест на паузі</div>
+  <div class="pause-sub" style="margin:0 20px;text-align:center;">Питання приховано — повернись до комп'ютера та натисни «Продовжити»</div>
+  <button class="pause-btn" onclick="resumeTest()" style="margin-top:8px;">▶️ Продовжити</button>
+  <div style="font-size:12px;color:#666;margin-top:12px;">або натисни <kbd style="background:#333;color:#fff;padding:2px 8px;border-radius:4px;font-family:monospace;">Esc</kbd></div>
+</div>
+<style>
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+kbd{font-size:12px;}
+</style>
 </body>
 </html>
